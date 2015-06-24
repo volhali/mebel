@@ -1,4 +1,5 @@
 <? require_once('config/config.php'); ?>
+<? require_once('config/class.config.php'); ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -16,6 +17,7 @@
 <!-- Логотип -->
       <div class="logo"><a href="main.html"><img src="images/538914.jpeg" width="200" height="130" border="0" alt="" /></a></div>
 <!-- Поиск -->
+      <div><a href = 'reg.php'>Регистрация</a></div>
       <div class="search">
       <form id="form1" name="form1" method="post" action="#">
 		<br /><font color="#FFFFFF"><b>Поиск по сайту</b></font><br /> 

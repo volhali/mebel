@@ -4,6 +4,7 @@
        $dbuser = 'root';
        $dbpassword = '';
        $tbl_maintext = 'maintexts';
+       $tbl_user = 'users';
        $dbx = mysql_connect($db_location,$dbuser,$dbpassword);//подключение к БД
        if (!$dbx) {
        	exit ("Error of db connection");
@@ -15,5 +16,5 @@
        @mysql_query("SET NAMES 'utf-8'");//функция не критична для выполнения,устанавливаем кодировку.
 //k50ijseries пароль
        //volhali логин
-
+       
 

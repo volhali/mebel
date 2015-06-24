@@ -9,7 +9,7 @@ $addr = mysql_query($query);
 if (!$addr) {
  exit($query);
 }
-$text = mysql_fetch_array($addr)//выодит ассоциативный массив
+$text = mysql_fetch_array($addr)//выводит ассоциативный массив
 
 ?>
 

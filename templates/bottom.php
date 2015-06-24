@@ -1,3 +1,4 @@
+        </div>
         <div class="right">
         <h2>Новые услуги<br />
           <span> Мебель на заказ</span></h2>
