@@ -1,5 +1,6 @@
-<? require_once('config/config.php'); ?>
-<? require_once('config/class.config.php'); ?>
+<?session_start();
+require_once('config/config.php'); 
+require_once('config/class.config.php'); ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -8,6 +9,18 @@
 <meta name="description" content="Готовый шаблон сайта на CSS, HTML, Java. Блочная верстка. Комментарии в коде. Скачать бесплатно" />
 <meta name="keywords" content="простой, шаблон, css, html, java, скачать" />
 <link href="style.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="js/jquery.js"></script>
+<script type="text/javascript" src="js/easySlider1.5.js"></script>
+<script type="text/javascript" charset="utf-8">
+$(document).ready(function () {
+    $("#slider").easySlider({
+        controlsBefore: '<p id="controls">',
+        controlsAfter: '</p>',
+        auto: true,
+        continuous: true
+    });
+});
+</script>
 </head>
 <body>
 <!-- Начало страницы -->
@@ -17,8 +30,15 @@
 <!-- Логотип -->
       <div class="logo"><a href="main.html"><img src="images/538914.jpeg" width="200" height="130" border="0" alt="" /></a></div>
 <!-- Поиск -->
-      <div><a href = 'reg.php'>Регистрация</a></div>
-      <div class="search">
+      <div><?if ($_SESSION['id']) {?>
+        <a href = 'logout.php'>Выход</a>
+     <?}else{?>
+      <a href = 'reg.php'> Регистрация</a>
+      <a href = 'auth.php'>Авторизация</a>
+      <?}?>
+     
+      </div>
+             <div class="search">
       <form id="form1" name="form1" method="post" action="#">
 		<br /><font color="#FFFFFF"><b>Поиск по сайту</b></font><br /> 
            <label><span>

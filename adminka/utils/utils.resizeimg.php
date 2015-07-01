@@ -19,12 +19,9 @@
   // $width и $height пикселам, соответственно. Это максимально 
   // возможные значения. Они будут пересчитаны чтобы сохранить 
   // пропорции масштабируемого изображения.
-  function resizeimg($big, $small, $pos, $width, $height) 
+  function resizeimg($big, $small, $width, $height) 
   { 
-    // Имя файла с масштабируемым изображением 
-    $big = "../../photos/large/$big"; 
-    // Имя файла с уменьшенной копией. 
-    $small = "../../photos/$pos/$small";     
+ 
     // определим коэффициент сжатия изображения, которое будем генерить 
     $ratio = $width / $height; 
     // получим размеры исходного изображения 
@@ -68,21 +65,6 @@
     else if ($size_img[2]==1) imagegif($dest_img, $small);                       
     else if ($size_img[2]==3) imagepng($dest_img, $small); 
 
-		if($pos == 'right')
-		{
-		$dest = imagecreatefromjpeg($small); 
-		$src = imagecreatefrompng("../../photos/right/transporent_right.png");
-		imagecopyresampled ($dest,$src,0,0,0,0,$width, $height, $width, $height);
-		imagejpeg($dest, $small,80);
-		}	
-		
-		if($pos == 'left')
-		{
-		$dest = imagecreatefromjpeg($small); 
-		$src = imagecreatefrompng("../../photos/left/transporent_left.png");
-		imagecopyresampled ($dest,$src,0,0,0,0,$width, $height, $width, $height);
-		imagejpeg($dest, $small,80);
-		}	
     // чистим память от созданных изображений 
     imagedestroy($dest_img); 
     imagedestroy($src_img); 

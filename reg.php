@@ -8,7 +8,7 @@ $email = new field_text_email ('email','E-mail',true,$_POST['email']);
 $form = new form(array('login'=>$login,'password'=>$password,'password2' => $password2,'email'=>$email),Регистрация,'field');
 if ($_POST) {
 	$error = $form->check();
-	if ($form->fields['password']->value == $form->fields['password']->value ) {
+	if ($form->fields['password']->value != $form->fields['password2']->value ) {
 		$error[] = 'Пароли не совпадают';
 	}
 	if (empty($error)) {
@@ -24,7 +24,7 @@ if (!$cut) {
 
 ?>
 <script>
-document.location.href= 'index.php';</script>
+document.location.href= 'auth.php';</script>
 	<?}
 	if (!empty($error)) {
 		foreach ($error as $err) {

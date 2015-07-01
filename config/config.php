@@ -1,5 +1,9 @@
 <?php 
-		$db_location = 'localhost';
+       $tbl_comment ='comment';
+       $tbl_categories ='categories';
+       $tbl_accounts='system_accounts';
+       $_tbl_picture = 'portfolio';
+	$db_location = 'localhost';
        $dbname = 'nomenklatura';
        $dbuser = 'root';
        $dbpassword = '';

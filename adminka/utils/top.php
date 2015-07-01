@@ -4,10 +4,8 @@
 ?>
 <html>
 <head>
-	<script type="text/javascript" src="../../texteditor/ckeditor.js"></script>
-	<script src="../../texteditor/_samples/sample.js" type="text/javascript"></script>
-	<link href="../../texteditor/_samples/sample.css" rel="stylesheet" type="text/css" />
-<meta http-equiv="Content-Type" content="text/html; charset=utf8">
+	<script type="text/javascript" src="../../media/ckeditor/ckeditor.js"></script>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf8">
 <title><?php echo $title; ?></title>
 <link rel="StyleSheet" type="text/css" href="../utils/cms.css">
 </head>
