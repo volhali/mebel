@@ -1,0 +1,314 @@
+
+<tpl name=obligacii_standart>
+<style>
+	#calc_answer{ background:#DDDDDD; margin:1em 0; padding:1.5em; clear:both; color:#4C4C4C;}
+	.nobr{ white-space: nowrap;}
+</style>
+
+<script type="text/javascript" src="/templates/js/numbersFormat/autoNumeric.min.js"></script>
+<script type="text/javascript">
+jQuery(function($) {
+    $('#summa').autoNumeric({aSep: ' ', vMax: '99999999999999999',aPad: false});
+  });
+</script>
+
+<form class="form" action="<? echo $action ?>ajax=calculate" method="post" id="vklad_calc" onsubmit="vklad_raschet(); return false;">
+  <table border="0" cellspacing="0" cellpadding="0" class="solid_table" width="320">
+    <tr>
+      <th nowrap="nowrap" width="180">Дата вклада:</th>
+      <td><?=date("d.m.Y");?></td>
+    </tr>
+    <tr>
+      <th nowrap="nowrap">Сумма вклада:</th>
+      <td nowrap="nowrap"><input name="vklad[summa]" type="text" id="summa" maxlength="12" />
+        &nbsp;
+        <select name="vklad[val_key]" id="select_val">
+      		<option value='0'>Выберите валюту</option>
+          <? foreach ($VAL as $k=>$v){ ?>
+          <option value="<?=$k?>">
+          <?=$v?>
+          </option>
+          <? } ?>
+      </select></td>
+    </tr>
+    <tr id="vklad_name_block">
+      <th nowrap="nowrap" >Название вклада:</th>
+      <td><select name="vklad[vklad_id]" id="select_vklad" style="display:none;">
+            <option value='0'>Выберите вклад</option>
+            <? foreach ($VKLAD as $k=>$v){ ?>
+            <option value="<?=$k?>"><?=$k?></option>
+            <? } ?>
+          </select></td>
+    </tr>
+    <tr id="vklad_srok_block">
+      <th nowrap="nowrap" >Срок вклада:</th>
+      <td><div id="vklad_srok"></div></td>
+    </tr>
+    <tr id="vklad_procent_block">
+      <th nowrap="nowrap" >Процентная ставка:</th>
+      <td><div id="vklad_procent"></div></td>
+    </tr>
+    <tr id="vklad_info_block">
+      <th nowrap="nowrap" style="vertical-align: top;" >Информация о вкладе:</th>
+      <td><div id="vklad_info"></div></td>
+    </tr>
+    <tr id="vklad_info_procent_block">
+      <th nowrap="nowrap" style="vertical-align: top;">Информация о <br />процентах:</th>
+      <td><div id="vklad_info_procent"></div></td>
+    </tr>
+    <tr id="vklad_info_dohod_block">
+      <th nowrap="nowrap" style="vertical-align: top;">Информация о <br />выплате процентов:</th>
+      <td><div id="vklad_info_dohod"></div></td>
+    </tr>
+    <tr id="vklad_info_ref_nachalo">
+      <th nowrap="nowrap" style="vertical-align: top;">Курс НБ РБ на дату<br />
+      открытия вклада:</th>
+      <td><input name="vklad[ref_nachalo]" type="text" id="ref_nachalo" /></td>
+    </tr>
+    <tr id="vklad_info_ref_konec">
+      <th nowrap="nowrap" style="vertical-align: top;">Курс НБ РБ на дату<br />
+      закрытия вклада:</th>
+      <td><input name="vklad[ref_konec]" type="text" id="ref_konec" /></td>
+    </tr>
+    <tr id="vklad_minimal_block">
+      <th nowrap="nowrap" >Минимальная сумма вклада:</th>
+      <td><div id="vklad_minimal"></div></td>
+    </tr>
+    <tr>
+      <td nowrap="nowrap" id="vklad_raschet_block">&nbsp;</td>
+      <td><button name="calc" id="calc_raschet">Рассчитать</button></td>
+    </tr>
+  </table>
+</form>
+<div id="denominaciya" style="display: none; text-align: justify;font-weight: bold;font-style: italic;"><span style="color: red;">Внимание! </span>Сумма вклада указывается в денежных знаках образца 2009 года (соотношение к денежным знакам образца 2000 года - 1: 10 000).</div>
+<div id="calc_answer">&nbsp;</div>
+<p>Примечание: <span  style="color:#127d49;">Данный расчет является ориентировочным и не является обязательством банка по уплате процентов в указанной сумме.
+Все расчёты приводятся с условием неизменности суммы вклада, не истребования процентов в течение срока хранения, без учета сумм подоходного налога!</span></p>
+
+<script type="text/javascript">
+
+var calc_vklad_data = <?
+ echo $VKLAD_json;
+?>;
+
+var calc_SR = '<?=$SR ?>'; 
+
+/*
+* При полной загрузке документа
+* мы начинаем определять события
+*/
+$(document).ready(function () {
+	$("#summa").val("");
+	$("#select_val :first").attr("selected", "selected");
+	
+	$('#select_vklad').hide();
+	$('#vklad_procent_block').hide();
+	$('#vklad_minimal_block').hide();
+	$('#vklad_srok_block').hide();
+	$('#vklad_name_block').hide();
+	$('#vklad_info_block').hide();
+	$('#vklad_info_procent_block').hide();
+	$('#vklad_info_dohod_block').hide();
+	$('#vklad_info_ref_nachalo').hide();
+	$('#vklad_info_ref_konec').hide();
+
+
+
+    /*
+     * На выборе селекта валют — вешаем событие,
+     * функция будет брать значение этого селекта 
+     * и с помощью ajax запроса получать список
+     * выпусков облигаций для вставки в следующий селект 
+     */
+    $('#select_val').change(function () {
+    	if ( $('#select_val').val()=='BYN') {
+    		$('#denominaciya').css("display", "block");
+    	}else{
+    		$('#denominaciya').css("display", "none");
+    	}
+        var val_key = $(this).val();
+		var vklads = calc_vklad_data;
+		
+        //  Прячем все лишнее
+		$('#select_vklad').hide();
+		$('#vklad_procent_block').hide();
+		$('#vklad_minimal_block').hide();
+		$('#vklad_srok_block').hide();
+		$('#vklad_name_block').hide();
+		$('#vklad_info_block').hide();
+		$('#vklad_info_procent_block').hide();
+		$('#vklad_info_dohod_block').hide();
+		$('#vklad_info_ref_nachalo').hide();
+		$('#vklad_info_ref_konec').hide();
+		
+		if( val_key == 0 ) return 1;
+		
+		 /*
+         * Очищаем второй селект и блокируем его через атрибут disabled
+         * туда мы будем класть результат запроса
+         */
+		$('#select_vklad').show();
+        $('#select_vklad').attr('disabled', true);
+        $('#select_vklad').html('<option>загрузка...</option>');
+
+        var options = '<option value="0"> Выберите вклад </option>';
+       
+		for(ind in vklads){  
+			var v = vklads[ind]; 
+			if(v['vklad_val']==val_key){
+				options += '<option value="' + v['vklad_id'] + '"> ' + v['vklad_name'] + '</option>';
+			}
+		}
+
+
+        $('#select_vklad').html(options);
+        $('#select_vklad').attr('disabled', false);
+		
+		$('#vklad_name_block').show();
+		return 1;
+	});	
+
+
+    /*
+     * На выборе селекта выбора вклада — вешаем событие
+     */    
+	 $('#select_vklad').change(function () {
+        var vklad_id = $(this).val();
+		var vklad = calc_vklad_data[vklad_id];
+        //  Прячем все лишнее
+		$('#vklad_procent_block').hide();
+		$('#vklad_minimal_block').hide();
+		$('#vklad_srok_block').hide();
+		$('#vklad_info_block').hide();
+		$('#vklad_info_procent_block').hide();
+		$('#vklad_info_dohod_block').hide();
+		$('#vklad_info_ref_nachalo').hide();
+		$('#vklad_info_ref_konec').hide();
+
+
+        if (vklad_id == '0') return 0;
+
+		set_procent();
+		
+		$('#vklad_srok_block').show();
+		if (vklad['vklad_srok_do']!='') {
+			$('#vklad_srok').html( vklad['vklad_srok_do'] );
+		} else {
+			$('#vklad_srok').html( vklad['vklad_srok'] );
+		}
+		
+		if(vklad['vklad_minimal'] >0 ) $('#vklad_minimal_block').show();
+		$('#vklad_minimal').html( vklad['vklad_minimal'] );
+		
+		if( vklad['vklad_info'] ){
+			$('#vklad_info').html( vklad['vklad_info']);
+			$('#vklad_info_block').show();
+		}
+		
+		if( vklad['vklad_info_procent'] ){
+			$('#vklad_info_procent').html( vklad['vklad_info_procent']);
+			$('#vklad_info_procent_block').show();
+		}
+		
+		if( vklad['vklad_info_dohod'] ){
+			$('#vklad_info_dohod').html( vklad['vklad_info_dohod']);
+			$('#vklad_info_dohod_block').show();
+		}
+
+		if ( vklad_id == '53' || vklad_id == '54' || vklad_id == '55') {
+			$('#vklad_info_ref_nachalo').show();
+			$('#vklad_info_ref_konec').show();
+		}
+
+		return 1;
+	});
+
+
+    /*
+     * При нажатии на кнопку "расчитать"
+     */    
+	$('#calc_raschet').click(function () {
+		vklad_raschet();
+	});
+
+	 /*
+     * При нажатии на кнопку "расчитать"
+     */    
+	$('#summa').keyup(function () {
+		set_procent();
+	});
+	
+
+        
+});	
+
+
+
+
+function set_procent(){
+    var summa = $('#summa').val().replace(/[\s\-\(\)]+/g, '');
+    var vklad_id = $('#select_vklad').val() ;
+	
+	if( !vklad_id ) return '';
+	
+	var vklad = calc_vklad_data[ vklad_id ];
+	
+	if (typeof(vklad) != "undefined") {
+		var proc = vklad['vklad_procent'];
+	}
+
+	var find = 0;
+	var out ='';
+	
+	for(i in vklad['USL']){
+		usl = vklad['USL'][i];
+		if( usl['summ_from'] < 1)  continue; 
+		if(!find && +summa > +usl['summ_from'] ){
+			if(+usl['procent_plus_sr']){ // учитывать ставку рефинансирования
+				proc = 'СР + ' +usl['procent'] + ' = ' + ( +usl['procent']+ +calc_SR) + ' %';
+			}else{
+				proc = +usl['procent']+ ' %';
+			}
+			break;		
+		}
+	}
+	
+	if(1){
+		$('#vklad_procent_block').show();
+		//if (vklad_id == 62) proc = '43 %';
+		//if (vklad_id == 63 || vklad_id == 64 || vklad_id == 65) proc = '5 %';
+		$('#vklad_procent').html( proc + out);
+	}
+	
+}
+
+
+
+function vklad_raschet(){
+    	formid = '#vklad_calc';
+	 	$('#calc_answer').html('Загрузка данных. Подождите...   ');
+		
+		$.ajax({
+	   		type: "POST",
+	   		url: $(formid).attr("action"),
+   			data: $(formid).serializeArray(),
+	   		async: false,
+   			success: function(responseText, responseCode) {
+				$('#calc_answer').html(responseText);
+	   		}
+	 	});
+
+		
+		$('#show_raschet').click(function () {
+			t1='Показать расчет'; t2='Скрыть расчет';
+			$('#raschet').slideToggle();
+			
+			$(this).html( $(this).html()==t2 ? t1 : t2 );
+			return false;
+		});
+		
+		return 1;
+}
+
+</script>
+</tpl obligacii_standart>
