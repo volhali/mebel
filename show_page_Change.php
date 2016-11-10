@@ -1,5 +1,23 @@
 <?
 
+//*****************  ВСТУПЛЕНИЕ   **************
+// для капеллы - калькулятор с минимальным дизайном
+if(strpos($_SERVER["SCRIPT_FILENAME"], 'show_page.php')){ 
+    // инициализация
+	require_once($_SERVER['DOCUMENT_ROOT'].'/include/init.php');
+
+    ?>
+    <script type="text/javascript" src="/templates/js/Jquery/jquery.min.js"></script>
+    <link href="/templates/default/content.css" rel="stylesheet" type="text/css" />
+    <link href="/templates/default/design.css" rel="stylesheet" type="text/css" />
+    <link href="http://china-bel.by/panel/touchcd.css" rel="stylesheet" type="text/css" />
+    <?
+}
+
+
+
+
+
 if(strpos($_SERVER["SCRIPT_FILENAME"], 'show_page.php')){ 
 	$OBL = new obligascii_page(REG::I()->PARAM, REG::I()->url.'?');
 } else {
@@ -365,6 +383,7 @@ class obligascii_page{
 		// Считаем ОСНОВНЫЕ ПРОЦЕНТЫ для каждого периода и суммарный
 		$S=0;	// Сумма вклада
 		$T=0;	// Проценты
+		//$Tud=0;
 		$priznak = 0;
 		$ST = ''; $STsum = $CALC['summa'].' ';  //строка цифр для вывода
 		$dopDohodKapitFormula = '';
@@ -373,43 +392,87 @@ class obligascii_page{
 		$Premial = 0;  // Cумма премиальных процентов
 		$STPremial = '';  // Cумма премиальных процентов
 		$PROCPremial = $vklad['vklad_dop_dohod']+0;  // процентная ставка премиальных процентов
-
 		foreach($PERIOD as $date=>$v){
 
 			if(!$PERIOD[$date]['summa']) $PERIOD[$date]['summa'] = $S;
+
 			$per = &$PERIOD[$date];
+
 			// Капитализация
-			if($per['kapital']){
-				$PERIOD[$date]['summa'] = $this->round( $PERIOD[$date]['summa'] + $Tsum , $vklad['vklad_val']);//1000
+			if($per['kapital'] && $CALC['podohod']!=1){
+				$PERIOD[$date]['summa'] = $this->round( $PERIOD[$date]['summa'] + $Tsum , $vklad['vklad_val']);
 				$PERIOD[$date]['STsum'] = $STsum . ' = <b><span class="nobr">' . $this->format_result($PERIOD[$date]['summa'],$vklad['vklad_val']).' '.$vklad['vklad_val'].'</span></b>';
-				$STsum = $PERIOD[$date]['summa'] . ' ';//1000
+				$STsum = $PERIOD[$date]['summa'] . ' ';
 				$Tsum=0;
 			}
+			// Капитализация
 			if($per['kapital'] && $CALC['podohod']==1){
-				$PERIOD[$date]['summa'] = $this->round( $PERIOD[$date]['summa'] + $Tsum -$Tp//1000
+				$PERIOD[$date]['summa'] = $this->round( $PERIOD[$date]['summa'] + $Tsum, $vklad['vklad_val']);
 				$PERIOD[$date]['STsum'] = $STsum . ' = <b><span class="nobr">' . $this->format_result($PERIOD[$date]['summa'],$vklad['vklad_val']).' '.$vklad['vklad_val'].'</span></b>';
-				$STsum = $PERIOD[$date]['summa'] . ' ';//1000
+				$STsum = $PERIOD[$date]['summa'] -$Tpod . ' ';
+				$STsum = ($this->round($STsum,$vklad['vklad_val']));
 				$Tsum=0;
-				$Tp=0;
+				$Tpod=0;
 			}
+			$S=explode("+", $STsum); $S=$S[0];
+			$S =($this->round($S,$vklad['vklad_val']));
 			// не считаем проценты после окончания срока вклада
 			if($date >= $endDate) continue(1);
+			
 			// Вычисляем процент по условиям
 			$per['proc'] = $vklad['vklad_procent'] + ( $vklad['vklad_procent_plus_sr'] ? $per['sr'] : 0 );
 			$find = false;
 			foreach( $vklad['USL'] as  $usl){
 				//	summ_from,summ_to,srok_from,srok_to,srok_type,procent,procent_plus_sr
+					
 				if( ( $usl['summ_from']>0 && ( $per['summa'] > $usl['summ_from'] )) || 
 					( $usl['srok_from']>0 && ( $date >= $this->DateDelta($startDate,$usl['srok_from'].$usl['srok_type']) ))
-				){		$find = true;
+				){
+						$find = true;
 						$per['proc'] = $usl['procent'] + ( $usl['procent_plus_sr'] ? $per['sr'] : 0 );
 						$per['USL'] =  '---'.$usl['summ_from'].'='.$per['summa'].'---';
+						//echo $usl['procent_plus_sr'].'-'.$per['sr'].'-'.$usl['summ_from'].' < '.$per['summa'] .' < '.$usl['summ_to'].'  proc='.$per['proc'].'<br>';
 						break;
 				}
+					
+					
 			}
-			$P = $per['proc'];			$S = $per['summa'];			$L = $per['length_days'];			$d = $per['yeardays'];
+
+
+			$P = $per['proc'];
+			if ($CALC['podohod']!=1) $S = $per['summa'];
+			$L = $per['length_days'];
+			$d = $per['yeardays'];
 			$T = ( $S * $P * $L ) / ($d * 100);
-			$Tpod = $T *13 /100;
+
+			$TP = $T*13/100;
+
+
+			// для вкладов с доп.капитализацией
+			/*
+			if ($vklad['vklad_dopKapit_procent'] != 0) {
+				if ($dopDohodKapitProcent == 0) {
+					$dopDohodKapitProcent = $vklad['vklad_dopKapit_procent'];
+					$dopDohodKapitFormula = "( $S * $dopDohodKapitProcent * $L ) / ($d * 100)";
+					$dopDohodKapitValue =  ($S * $dopDohodKapitProcent * $L) / ($d * 100);
+				} elseif(isset($per['procent_kvartal'])) {
+					$dopDohodKapitProcent = $per['procent_kvartal'];
+					$per['ST_dopKapit_dohod'] = $dopDohodKapitFormula."( $S * $dopDohodKapitProcent * $L ) / ($d * 100)";
+					$dopDohodKapitFormula = '';
+
+					$per['ST_dopDohodkapitValue'] =  (ceil($dopDohodKapitValue/100))*100;
+					$T = $T + $per['ST_dopDohodkapitValue'];
+					$dopDohodKapitValue =  ($S * $dopDohodKapitProcent * $L) / ($d * 100);
+				} else {
+					if($dopDohodKapitFormula == '') 	$dopDohodKapitFormula .= "( $S * $dopDohodKapitProcent * $L ) / ($d * 100)";
+					else 								$dopDohodKapitFormula .= " + ( $S * $dopDohodKapitProcent * $L ) / ($d * 100)";
+					$dopDohodKapitValue =  $dopDohodKapitValue + ($S * $dopDohodKapitProcent * $L) / ($d * 100);
+				}
+				//echo $dopDohodKapitValue.'<br />';
+
+			}
+			*/
+
 			$per['ST'] = $ST = "( $S * $P * $L ) / ($d * 100) = $T";
 			$per['ST_without_result'] = $ST = "( $S * $P * $L ) / ($d * 100)";
 
@@ -424,9 +487,13 @@ class obligascii_page{
 			$per['T'] = $T;
 			$Tsum +=$T;
 			$per['Tsum'] = $Tsum;
-			$Tp +=$Tpod;
 
+			$per['TP'] = $TP;
+			$Tpod +=$TP;
+			$per['Tpod'] = $Tpod;
 
+			//$Tud +=$T; 
+			//$per['Tud'] = $Tud;
 			//$PERIOD[$date]['dohod'] = $per['stoimost']*$per['proc']*$per['length_days'] / ( $per['yeardays']*100 );
 			$dohod += $PERIOD[$date]['dohod'];
 			$days += $per['length_days'];
@@ -452,17 +519,16 @@ class obligascii_page{
 			$PERIOD[$date]['kapital']=1;
 			$PERIOD[$date]['summa'] = $this->round( $PERIOD[$date]['summa'] + $Tsum , $vklad['vklad_val']);
 			$PERIOD[$date]['STsum'] = $STsum . ' = ' . $this->round($Tsum,$vklad['vklad_val']);
+
 		}	
 		
 		$SUMM = $PERIOD[$date]['summa']; // Итоговая сумма вклада
 		$PROC = $SUMM - $CALC['summa'];   // Итого процентов
-	
 		//***************************
 		// Вывод результата расчетов
 		$ttempVar = 0;
 		$out_raschet = '';  $kapInd = 1;
 		$i=0; 
-		F::debug($PERIOD);
 		foreach($PERIOD as $date=>$v){	
 			if(!$PERIOD[$date]['summa']) $PERIOD[$date]['summa'] = $S;
 
@@ -478,7 +544,7 @@ class obligascii_page{
 					$out_raschet .= ' = '.'<strong>'.$this->format_result($SUMM + $Premial + $dopolnitelnyDohod, $vklad['vklad_val']).' '.$vklad['vklad_val'].'</strong>';
 					 $this->podohod = 13;$period = prev($PERIOD);
 					$podohodn =  $PERIOD[$date]['summa'] - ($period['T'] * $this->podohod /100);
-						$out_raschet .= ' ,<br>остаток вклада за вычетом подоходного налога '.$PERIOD[$date]['summa'].' - '.$this->format_result($period['T']).'*'.$this->podohod.' / 100 = <strong>'.$this->format_result($podohodn).'</strong>';
+						$out_raschet .= ' ,<br>остаток вклада за вычетом подоходного налога '.$PERIOD[$date]['summa'].' - '.$this->format_result($period['T']).'*'.$this->podohod.' / 100 = <strong>'.$this->format_result($podohodn).' '.$vklad['vklad_val'].'</strong>';
 				} else {
 					$out_raschet .= $PERIOD[$date]['ST_without_result'].' + ' ;
 					}
@@ -498,7 +564,7 @@ class obligascii_page{
 
 					$podohodn =  $PERIOD[$date]['summa'] - ($PERIOD[$date]['summa'] - $a)*$this->podohod /100;
 
-					$out_raschet .= ' остаток вклада за вычетом подоходного налога '.$PERIOD[$date]['summa'].' - ('.$PERIOD[$date]['summa'].' - '.$a.') *'.$this->podohod.' / 100 = '.$this->format_result($podohodn).'<br>';
+					$out_raschet .= ' остаток вклада за вычетом подоходного налога '.$this->format_result($PERIOD[$date]['summa'],$vklad['vklad_val']).' - ('.$this->format_result($PERIOD[$date]['summa'],$vklad['vklad_val']).' - '.$this->format_result($a,$vklad['vklad_val']).') *'.$this->podohod.' / 100 = '.$this->format_result($podohodn).' '.$vklad['vklad_val'].'<br>';
 				}else{
 				$out_raschet .= $kapInd .'-я капитализация: '. $PERIOD[$date]['STsum'].'<br>';
 				}
@@ -561,6 +627,10 @@ class obligascii_page{
 		//if($PREMIAL>0) $out .= '<br>Сумма премиальных процентов (вар2)- <b>'.$this->format_result($PREMIAL, $vklad['vklad_val']).' '.$vklad['vklad_val'].'</b>';
 		
 		$out .='<br> Общая сумма на день возврата вклада: <b>'.$this->format_result($SUMM + $Premial + $dopolnitelnyDohod, $vklad['vklad_val']).' '.$vklad['vklad_val'].'</b>';
+		if ($CALC['podohod']==1) {
+			$out .='<br> Сумма удержанного из суммы процентов подоходного налога: <b>'.$this->format_result($TUD).'</b>';
+		}
+
 		
 		
 		/*
